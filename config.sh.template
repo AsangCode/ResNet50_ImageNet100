@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# EC2 Configuration
+export EC2_INSTANCE="YOUR_EC2_INSTANCE"  # e.g., "ec2-xx-xxx-xx-xx.region.compute.amazonaws.com"
+export EC2_KEY="PATH_TO_YOUR_KEY"        # e.g., "~/keys/your-key.pem"
+
+# AWS Configuration
+export AWS_DEFAULT_REGION="YOUR_REGION"  # e.g., "us-east-1"
+export S3_BUCKET="YOUR_BUCKET"           # e.g., "your-training-bucket"
+
+# Dataset Configuration
+export DATASET_ZIP="YOUR_DATASET_ZIP"    # e.g., "dataset.zip"
+export DATASET_NAME="YOUR_DATASET_DIR"   # e.g., "ImageNet100"
+export DATASET_TRAIN_DIR="train"         # Training data subdirectory
+export DATASET_VAL_DIR="val"             # Validation data subdirectory
+
+# Directory Structure
+export BASE_DIRS=(
+    "code"      # For Python scripts
+    "data"      # For dataset storage
+    "venv"      # For Python virtual environment
+    "cache"     # For pip and other caches
+    "tmp"       # For temporary files
+    "results"   # For training outputs
+)
+
+# Python Environment
+export PYTHON_VERSION="python3"
+export VENV_NAME="venv"
+export PIP_NO_CACHE_DIR="true"
+
+# Training Configuration
+export BATCH_SIZE=128
+export NUM_WORKERS=2
+export NUM_EPOCHS=100
+
+# Required Project Files
+export PROJECT_FILES=(
+    "train.py"
+    "model.py"
+    "dataset.py"
+    "requirements.txt"
+)
+
+# Result Directories to Save
+export RESULT_DIRS=(
+    "checkpoints"
+    "logs"
+    "runs"
+    "models"
+)
