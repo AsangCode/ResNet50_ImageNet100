@@ -1,113 +1,109 @@
-# ResNet50 Training on TinyImageNet
+# ResNet50 Training on ImageNet100
 
-This project implements training of ResNet50 from scratch on the TinyImageNet dataset, aiming to achieve 75% top-1 accuracy.
+This project implements training of ResNet50 from scratch on the ImageNet100 dataset using AWS EC2 for GPU acceleration.
 
 ## Dataset
-TinyImageNet is a subset of ImageNet with:
-- 200 classes
-- 500 training images per class
-- 50 validation images per class
-- Images are 64x64 pixels
+ImageNet100 is a curated subset of ImageNet with:
+- 100 classes
+- Training and validation images for each class
+- Full ImageNet resolution images
 
 ## Project Structure
-- `dataset.py`: Dataset loading and preprocessing
-- `model.py`: ResNet50 model implementation
 - `train.py`: Training loop and utilities
+- `model.py`: ResNet50 model implementation
+- `dataset.py`: Dataset loading and preprocessing
+- `lr_finder.py`: Learning rate finder utility
+- `config.sh`: Configuration variables
+- `config.sh.template`: Template for configuration
+- `train_on_ec2.sh`: Main training pipeline script
 - `requirements.txt`: Project dependencies
 
-## Local Setup and Training
-
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Run training locally:
-```bash
-python train.py
-```
-
-## AWS EC2 Training Pipeline
-
-### Prerequisites
-1. AWS CLI installed
+## Prerequisites
+1. AWS CLI installed and configured locally
 2. EC2 instance with GPU support
-3. S3 bucket created
+3. S3 bucket for dataset and results
 4. Dataset in zip format (archive.zip)
 
-### Setup AWS and EC2
+## Setup and Configuration
 
-1. Configure AWS CLI:
+1. Copy and configure `config.sh`:
 ```bash
-aws configure
-# Enter your:
-# - AWS Access Key ID
-# - AWS Secret Access Key
-# - Default region (e.g., ap-south-1)
-# - Default output format (json)
+cp config.sh.template config.sh
+# Edit config.sh with your settings:
+# - EC2_INSTANCE: Your EC2 instance DNS
+# - EC2_KEY: Path to your EC2 key file
+# - S3_BUCKET: Your S3 bucket name
+# - Other configurations as needed
 ```
 
-2. Update configuration in `run_training_pipeline.sh`:
+2. Set up AWS credentials:
 ```bash
-EC2_INSTANCE="your-ec2-instance-dns"  # EC2 instance DNS/IP
-EC2_KEY="path/to/your/key.pem"        # Path to your EC2 key file
-S3_BUCKET="your-s3-bucket"            # Your S3 bucket name
-DATASET_ZIP="archive.zip"             # Your dataset zip name
+# Create and edit set_aws_credentials.sh:
+export AWS_ACCESS_KEY_ID="your_access_key"
+export AWS_SECRET_ACCESS_KEY="your_secret_key"
+export AWS_DEFAULT_REGION="your_region"
 ```
 
-3. Make script executable:
+3. Make scripts executable:
 ```bash
-chmod +x run_training_pipeline.sh
+chmod +x train_on_ec2.sh
+chmod +x set_aws_credentials.sh
 ```
 
-### Running the Training Pipeline
+## Running the Training Pipeline
 
-1. For testing (1 epoch):
+1. Source AWS credentials:
 ```bash
-bash run_training_pipeline_test.sh
+source set_aws_credentials.sh
 ```
 
-2. For full training (100 epochs):
+2. Run the training pipeline:
 ```bash
-bash run_training_pipeline.sh
+./train_on_ec2.sh
 ```
 
-The pipeline will:
-- Upload dataset to S3
-- Set up EC2 environment
-- Download dataset on EC2
-- Install dependencies
-- Run training
-- Save models (.pth and .pt)
-- Upload results to S3
-- Download results locally
+The pipeline will automatically:
+1. Verify AWS connections and permissions
+2. Check/upload dataset to S3 if needed
+3. Find and use the largest available volume on EC2
+4. Set up Python environment and dependencies
+5. Download and prepare the dataset
+6. Run training with proper configurations
+7. Download results locally
 
-### Results and Outputs
+## Training Configuration
+- Batch size: 128 (configurable in config.sh)
+- Number of workers: 2 (configurable in config.sh)
+- Number of epochs: 100 (configurable in config.sh)
+- Learning rate: Determined by lr_finder
+- Optimizer: SGD with momentum
+- Weight decay: 1e-4
+
+## Results and Outputs
+Results are automatically downloaded to `./results/` including:
 - Checkpoints (.pth) in `results/checkpoints/`
 - Model files (.pt) in `results/models/`
 - Training logs in `results/logs/`
-- TensorBoard logs in `results/tensorboard/`
-
-
-## Training Details
-- Batch size: 128
-- Optimizer: SGD with momentum (0.9)
-- Initial learning rate: 0.1
-- Weight decay: 1e-4
-- Learning rate schedule: Cosine Annealing
-- Number of epochs: 100
-
-## Data Augmentation
-- Random resized crop
-- Random horizontal flip
-- Color jitter
-- Normalization using ImageNet statistics
+- TensorBoard logs in `results/runs/`
 
 ## Monitoring
-Training progress can be monitored using TensorBoard:
+Training progress can be monitored:
+1. Through script output showing real-time progress
+2. Using TensorBoard after downloading results:
 ```bash
-tensorboard --logdir runs
+tensorboard --logdir results/runs
 ```
 
-## Model Checkpoints
-Best model checkpoints are saved in the `checkpoints` directory.
+## Storage Management
+The script automatically:
+- Uses the largest available volume on EC2
+- Manages cache directories for pip, apt, and Python libraries
+- Cleans up temporary files
+- Verifies space requirements
+
+## Error Handling
+The script includes robust error handling for:
+- AWS connectivity issues
+- Space constraints
+- Dataset integrity
+- Training interruptions
